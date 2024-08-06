@@ -367,6 +367,8 @@ export class QueueClient extends StorageClient {
     deleteIfExists(options?: QueueDeleteOptions): Promise<QueueDeleteIfExistsResponse>;
     deleteMessage(messageId: string, popReceipt: string, options?: QueueDeleteMessageOptions): Promise<QueueDeleteMessageResponse>;
     exists(options?: QueueExistsOptions): Promise<boolean>;
+    // (undocumented)
+    generateSasStringToSign(options: QueueGenerateSasUrlOptions): string;
     generateSasUrl(options: QueueGenerateSasUrlOptions): string;
     getAccessPolicy(options?: QueueGetAccessPolicyOptions): Promise<QueueGetAccessPolicyResponse>;
     getProperties(options?: QueueGetPropertiesOptions): Promise<QueueGetPropertiesResponse>;
@@ -561,6 +563,8 @@ export class QueueServiceClient extends StorageClient {
     deleteQueue(queueName: string, options?: QueueDeleteOptions): Promise<QueueDeleteResponse>;
     static fromConnectionString(connectionString: string, options?: StoragePipelineOptions): QueueServiceClient;
     generateAccountSasUrl(expiresOn?: Date, permissions?: AccountSASPermissions, resourceTypes?: string, options?: ServiceGenerateAccountSasUrlOptions): string;
+    // (undocumented)
+    generateSasStringToSign(expiresOn?: Date, permissions?: AccountSASPermissions, resourceTypes?: string, options?: ServiceGenerateAccountSasUrlOptions): string;
     getProperties(options?: ServiceGetPropertiesOptions): Promise<ServiceGetPropertiesResponse>;
     getQueueClient(queueName: string): QueueClient;
     getStatistics(options?: ServiceGetStatisticsOptions): Promise<ServiceGetStatisticsResponse>;

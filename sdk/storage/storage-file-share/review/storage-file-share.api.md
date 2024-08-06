@@ -391,6 +391,7 @@ export interface DirectoryRenameOptions extends CommonOptions {
     copyFileSmbInfo?: CopyFileSmbInfo;
     destinationLeaseAccessConditions?: LeaseAccessConditions;
     filePermission?: string;
+    filePermissionFormat?: FilePermissionFormat;
     filePermissionKey?: string;
     ignoreReadOnly?: boolean;
     metadata?: Metadata;
@@ -464,6 +465,7 @@ export interface FileAndDirectoryCreateCommonOptions {
     creationTime?: Date | TimeNowType;
     fileAttributes?: FileSystemAttributes;
     filePermission?: string | FilePermissionInheritType;
+    filePermissionFormat?: FilePermissionFormat;
     filePermissionKey?: string;
     lastWriteTime?: Date | TimeNowType;
 }
@@ -474,6 +476,7 @@ export interface FileAndDirectorySetPropertiesCommonOptions {
     creationTime?: Date | TimeNowType | TimePreserveType;
     fileAttributes?: FileSystemAttributes | FileAttributesPreserveType;
     filePermission?: string | FilePermissionInheritType | FilePermissionPreserveType;
+    filePermissionFormat?: FilePermissionFormat;
     filePermissionKey?: string;
     lastWriteTime?: Date | TimeNowType | TimePreserveType;
 }
@@ -783,6 +786,9 @@ export interface FileParallelUploadOptions extends CommonOptions {
 }
 
 // @public
+export type FilePermissionFormat = "SDDL" | "binary";
+
+// @public
 export type FilePermissionInheritType = "inherit";
 
 // @public
@@ -836,6 +842,7 @@ export interface FileRenameOptions extends CommonOptions {
     copyFileSmbInfo?: CopyFileSmbInfo;
     destinationLeaseAccessConditions?: LeaseAccessConditions;
     filePermission?: string;
+    filePermissionFormat?: FilePermissionFormat;
     filePermissionKey?: string;
     ignoreReadOnly?: boolean;
     metadata?: Metadata;
@@ -1437,18 +1444,21 @@ export class ShareClient extends StorageClient {
         fileCreateResponse: FileCreateResponse;
     }>;
     createIfNotExists(options?: ShareCreateOptions): Promise<ShareCreateIfNotExistsResponse>;
-    createPermission(filePermission: string, options?: ShareCreatePermissionOptions): Promise<ShareCreatePermissionResponse>;
+    createPermission(filePermission: string | SharePermission, options?: ShareCreatePermissionOptions): Promise<ShareCreatePermissionResponse>;
     createSnapshot(options?: ShareCreateSnapshotOptions): Promise<ShareCreateSnapshotResponse>;
     delete(options?: ShareDeleteMethodOptions): Promise<ShareDeleteResponse>;
     deleteDirectory(directoryName: string, options?: DirectoryDeleteOptions): Promise<DirectoryDeleteResponse>;
     deleteFile(fileName: string, options?: FileDeleteOptions): Promise<FileDeleteResponse>;
     deleteIfExists(options?: ShareDeleteMethodOptions): Promise<ShareDeleteIfExistsResponse>;
     exists(options?: ShareExistsOptions): Promise<boolean>;
+    // (undocumented)
+    generateSasStringToSign(options: ShareGenerateSasUrlOptions): string;
     generateSasUrl(options: ShareGenerateSasUrlOptions): string;
     getAccessPolicy(options?: ShareGetAccessPolicyOptions): Promise<ShareGetAccessPolicyResponse>;
     getDirectoryClient(directoryName: string): ShareDirectoryClient;
     getPermission(filePermissionKey: string, options?: ShareGetPermissionOptions): Promise<ShareGetPermissionResponse>;
     getProperties(options?: ShareGetPropertiesOptions): Promise<ShareGetPropertiesResponse>;
+    getShareLeaseClient(proposeLeaseId?: string): ShareLeaseClient;
     getStatistics(options?: ShareGetStatisticsOptions): Promise<ShareGetStatisticsResponse>;
     get name(): string;
     get rootDirectoryClient(): ShareDirectoryClient;
@@ -1493,6 +1503,9 @@ export interface ShareCreateOptions extends CommonOptions {
     metadata?: {
         [propertyName: string]: string;
     };
+    paidBurstingEnabled?: boolean;
+    paidBurstingMaxBandwidthMibps?: number;
+    paidBurstingMaxIops?: number;
     protocols?: ShareProtocols;
     quota?: number;
     rootSquash?: ShareRootSquash;
@@ -1626,6 +1639,8 @@ export class ShareFileClient extends StorageClient {
     exists(options?: FileExistsOptions): Promise<boolean>;
     forceCloseAllHandles(options?: FileForceCloseHandlesOptions): Promise<CloseHandlesInfo>;
     forceCloseHandle(handleId: string, options?: FileForceCloseHandlesOptions): Promise<FileForceCloseHandlesResponse>;
+    // (undocumented)
+    generateSasStringToSign(options: FileGenerateSasUrlOptions): string;
     generateSasUrl(options: FileGenerateSasUrlOptions): string;
     getProperties(options?: FileGetPropertiesOptions): Promise<FileGetPropertiesResponse>;
     getRangeList(options?: FileGetRangeListOptions): Promise<FileGetRangeListResponse>;
@@ -1702,6 +1717,7 @@ export interface ShareGetPermissionHeaders {
 // @public
 export interface ShareGetPermissionOptions extends CommonOptions {
     abortSignal?: AbortSignalLike;
+    filePermissionFormat?: FilePermissionFormat;
 }
 
 // @public
@@ -1725,6 +1741,9 @@ export interface ShareGetPropertiesHeaders {
         [propertyName: string]: string;
     };
     nextAllowedQuotaDowngradeTime?: Date;
+    paidBurstingEnabled?: boolean;
+    paidBurstingMaxBandwidthMibps?: number;
+    paidBurstingMaxIops?: number;
     provisionedBandwidthMibps?: number;
     provisionedEgressMBps?: number;
     provisionedIngressMBps?: number;
@@ -1809,7 +1828,7 @@ export interface ShareItemInternal {
 
 // @public
 export class ShareLeaseClient {
-    constructor(client: ShareFileClient, leaseId?: string);
+    constructor(client: ShareFileClient | ShareClient, leaseId?: string);
     acquireLease(duration?: number, options?: LeaseOperationOptions): Promise<LeaseOperationResponse>;
     breakLease(options?: LeaseOperationOptions): Promise<LeaseOperationResponse>;
     changeLease(proposedLeaseId: string, options?: LeaseOperationOptions): Promise<LeaseOperationResponse>;
@@ -1821,6 +1840,8 @@ export class ShareLeaseClient {
 
 // @public
 export interface SharePermission {
+    // (undocumented)
+    format?: FilePermissionFormat;
     permission: string;
 }
 
@@ -1852,6 +1873,12 @@ export interface SharePropertiesInternal {
     leaseStatus?: LeaseStatusType;
     // (undocumented)
     nextAllowedQuotaDowngradeTime?: Date;
+    // (undocumented)
+    paidBurstingEnabled?: boolean;
+    // (undocumented)
+    paidBurstingMaxBandwidthMibps?: number;
+    // (undocumented)
+    paidBurstingMaxIops?: number;
     // (undocumented)
     provisionedBandwidthMiBps?: number;
     // (undocumented)
@@ -1904,6 +1931,8 @@ export class ShareServiceClient extends StorageClient {
     deleteShare(shareName: string, options?: ShareDeleteMethodOptions): Promise<ShareDeleteResponse>;
     static fromConnectionString(connectionString: string, options?: ShareClientOptions): ShareServiceClient;
     generateAccountSasUrl(expiresOn?: Date, permissions?: AccountSASPermissions, resourceTypes?: string, options?: ServiceGenerateAccountSasUrlOptions): string;
+    // (undocumented)
+    generateSasStringToSign(expiresOn?: Date, permissions?: AccountSASPermissions, resourceTypes?: string, options?: ServiceGenerateAccountSasUrlOptions): string;
     getProperties(options?: ServiceGetPropertiesOptions): Promise<ServiceGetPropertiesResponse>;
     getShareClient(shareName: string): ShareClient;
     listShares(options?: ServiceListSharesOptions): PagedAsyncIterableIterator<ShareItem, ServiceListSharesSegmentResponse>;
@@ -1963,7 +1992,11 @@ export interface ShareSetPropertiesHeaders {
 export interface ShareSetPropertiesOptions extends CommonOptions {
     abortSignal?: AbortSignalLike;
     accessTier?: ShareAccessTier;
+    enableSnapshotVirtualDirectoryAccess?: boolean;
     leaseAccessConditions?: LeaseAccessConditions;
+    paidBurstingEnabled?: boolean;
+    paidBurstingMaxBandwidthMibps?: number;
+    paidBurstingMaxIops?: number;
     quotaInGB?: number;
     rootSquash?: ShareRootSquash;
 }
