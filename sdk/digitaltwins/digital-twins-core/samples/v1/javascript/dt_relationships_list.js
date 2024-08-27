@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 /**
  * @summary Simple example of how to list all relationships using the paginated API
